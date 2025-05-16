@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import { loadUser } from './redux/actions/authActions';
 import setAuthToken from './utils/setAuthToken';
-import './axiosConfig'; 
+
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
