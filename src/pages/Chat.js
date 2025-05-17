@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../components/layout/Layout';
 import axios from 'axios';
@@ -815,7 +814,7 @@ const Chat = () => {
     </div>
   );
 
-  // Modal pentru grup nou
+ // Modal pentru grup nou
   const NewGroupModal = () => (
     <div 
       className="modal fade show" 
@@ -1004,6 +1003,10 @@ const Chat = () => {
    </div>
  );
 
+ // --------- MODIFICAREA PRINCIPALĂ PENTRU INTERFAȚA DE CHAT ------------
+ // Reorganizăm layout-ul pentru a arăta doar lista de conversații sau conversația activă
+ // în funcție de starea selectedChat
+ 
  return (
    <Layout>
      <div className="container-fluid">
@@ -1046,10 +1049,287 @@ const Chat = () => {
          </div>
        )}
 
-       <div className="row">
-         {/* Sidebar chat-uri */}
-         <div className="col-lg-4 mb-4">
-           <div className="content-card bg-dark text-white border border-secondary rounded">
+       {/* ---- Partea nouă pentru afișarea condiționată a listei de chat-uri sau a conversației ---- */}
+       <div className="content-card bg-dark text-white border border-secondary rounded">
+         {selectedChat ? (
+           // Conversație deschisă - afișăm doar interfața de chat
+           <div className="chat-container" style={{ height: '80vh', display: 'flex', flexDirection: 'column' }}>
+             {/* Header chat */}
+             <div className="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+               <div className="d-flex align-items-center">
+                 <button 
+                   className="btn btn-sm btn-dark me-2"
+                   onClick={() => setSelectedChat(null)}
+                 >
+                   <FontAwesomeIcon icon={faArrowLeft} />
+                 </button>
+                 <div className="d-flex align-items-center">
+                   {selectedChat.isGroupChat ? (
+                     <div 
+                       className="rounded-circle d-flex align-items-center justify-content-center text-white me-2"
+                       style={{ 
+                         width: '40px', 
+                         height: '40px',
+                         backgroundColor: '#0d6efd',
+                         fontSize: '18px'
+                       }}
+                     >
+                       {selectedChat.name.charAt(0)}
+                     </div>
+                   ) : (
+                     <div 
+                       className="rounded-circle d-flex align-items-center justify-content-center text-white me-2"
+                       style={{ 
+                         width: '40px', 
+                         height: '40px',
+                         backgroundColor: '#198754',
+                         fontSize: '18px'
+                       }}
+                     >
+                       {selectedChat.users.find(u => u._id !== user._id)?.name.charAt(0) || '?'}
+                     </div>
+                   )}
+                   <div>
+                     <h5 className="mb-0">{selectedChat.name}</h5>
+                     <small className="text-muted">
+                       {selectedChat.isGroupChat 
+                         ? `${selectedChat.users.length} participanți` 
+                         : 'Online'}
+                     </small>
+                   </div>
+                 </div>
+               </div>
+               <div>
+                 <button 
+                   className="btn btn-dark btn-sm"
+                   onClick={() => setShowSearch(!showSearch)}
+                 >
+                   <FontAwesomeIcon icon={faSearch} />
+                 </button>
+                 <button className="btn btn-dark btn-sm ms-2">
+                   <FontAwesomeIcon icon={faEllipsisV} />
+                 </button>
+               </div>
+             </div>
+             
+             {/* Bara de căutare în chat */}
+             {showSearch && (
+               <div className="p-2 border-bottom border-secondary" style={{ backgroundColor: '#2a2a2a' }}>
+                 <div className="input-group">
+                   <input 
+                     type="text" 
+                     className="form-control bg-dark text-white border-secondary"
+                     placeholder="Caută în conversație" 
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                   />
+                   <button 
+                     className="btn btn-outline-secondary" 
+                     type="button"
+                     onClick={() => setShowSearch(false)}
+                   >
+                     <FontAwesomeIcon icon={faTimes} />
+                   </button>
+                 </div>
+               </div>
+             )}
+             
+             {/* Zona pentru răspuns la mesaj */}
+             {replyTo && (
+               <div 
+                 className="p-2 d-flex justify-content-between align-items-center border-bottom border-secondary"
+                 style={{ backgroundColor: '#2a2a2a' }}
+               >
+                 <div className="d-flex align-items-center flex-grow-1">
+                   <FontAwesomeIcon icon={faReply} className="me-2 text-primary" />
+                   <div className="border-start border-primary ps-2" style={{ borderLeftWidth: '3px !important' }}>
+                     <div className="text-primary small">
+                       Răspuns către {replyTo.sender.name}
+                     </div>
+                     <div className="small text-truncate" style={{ maxWidth: '300px' }}>
+                       {replyTo.deletedForAll ? (
+                         <span className="fst-italic">Acest mesaj a fost șters</span>
+                       ) : replyTo.content ? (
+                         replyTo.content
+                       ) : (
+                         `[${
+                           replyTo.attachmentType === 'image' ? 'Imagine' :
+                           replyTo.attachmentType === 'audio' ? 'Audio' :
+                           replyTo.attachmentType === 'video' ? 'Video' : 'Document'
+                         }]`
+                       )}
+                     </div>
+                   </div>
+                 </div>
+                 <button 
+                   className="btn btn-sm text-muted" 
+                   onClick={() => setReplyTo(null)}
+                 >
+                   <FontAwesomeIcon icon={faTimes} />
+                 </button>
+               </div>
+             )}
+             
+             {/* Container mesaje */}
+             <div 
+               className="flex-grow-1 p-3" 
+               ref={chatContainerRef}
+               style={{ 
+                 overflowY: 'auto',
+                 backgroundColor: '#1a1a1a',
+                 backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
+                 backgroundSize: '20px 20px'
+               }}
+             >
+               {messagesLoading && messages.length === 0 ? (
+                 <div className="text-center my-3">
+                   <div className="spinner-border text-primary" role="status">
+                     <span className="visually-hidden">Se încarcă...</span>
+                   </div>
+                   <div className="mt-2 text-muted">Se încarcă mesajele...</div>
+                 </div>
+               ) : messages.length === 0 ? (
+                 <div className="text-center my-3 text-muted">
+                   <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: '24px' }} className="mb-2" />
+                   <div>Nu există mesaje în această conversație</div>
+                   <div className="mt-2">Trimite primul mesaj pentru a începe conversația!</div>
+                 </div>
+               ) : (
+                 <>
+                   {/* Indicator pentru încărcarea mesajelor mai vechi */}
+                   {messagesLoading && (
+                     <div className="text-center my-2">
+                       <div className="spinner-border spinner-border-sm text-primary" role="status">
+                         <span className="visually-hidden">Se încarcă...</span>
+                       </div>
+                       <div className="small text-muted mt-1">Se încarcă mesaje mai vechi...</div>
+                     </div>
+                   )}
+                   
+                   {/* Lista de mesaje */}
+                   {messages.map((message, index) => (
+                     <MessageItem 
+                       key={message._id} 
+                       message={message} 
+                       isLast={index === messages.length - 1}
+                     />
+                   ))}
+                   
+                   {/* Indicator typing */}
+                   {typingUsers.length > 0 && (
+                     <div className="small text-muted mt-2 mb-1 ms-2">
+                       {typingUsers.length === 1 ? (
+                         <div>Un utilizator scrie...</div>
+                       ) : (
+                         <div>Mai mulți utilizatori scriu...</div>
+                       )}
+                     </div>
+                   )}
+                 </>
+               )}
+             </div>
+             
+             {/* Footer chat pentru trimitere mesaje */}
+             <div className="p-2 border-top border-secondary" style={{ backgroundColor: '#2a2a2a' }}>
+               {/* Opțiuni pentru atașamente */}
+               {showAttachmentOptions && (
+                 <div 
+                   className="d-flex mb-2 p-2 rounded"
+                   style={{ backgroundColor: '#333' }}
+                 >
+                   <div 
+                     className="text-center mx-2"
+                     style={{ cursor: 'pointer' }}
+                     onClick={() => {
+                       fileInputRef.current.accept = "image/*";
+                       fileInputRef.current.click();
+                     }}
+                   >
+                     <div 
+                       className="rounded-circle d-flex align-items-center justify-content-center mb-1"
+                       style={{ 
+                         width: '40px', 
+                         height: '40px',
+                         backgroundColor: '#0d6efd',
+                         color: 'white'
+                       }}
+                     >
+                       <FontAwesomeIcon icon={faCamera} />
+                     </div>
+                     <div className="small">Imagine</div>
+                   </div>
+                   
+                   <div 
+                     className="text-center mx-2"
+                     style={{ cursor: 'pointer' }}
+                     onClick={() => {
+                       fileInputRef.current.accept = ".pdf,.doc,.docx,.xls,.xlsx,.txt";
+                       fileInputRef.current.click();
+                     }}
+                   >
+                     <div 
+                       className="rounded-circle d-flex align-items-center justify-content-center mb-1"
+                       style={{ 
+                         width: '40px', 
+                         height: '40px',
+                         backgroundColor: '#198754',
+                         color: 'white'
+                       }}
+                     >
+                       <FontAwesomeIcon icon={faPaperclip} />
+                     </div>
+                     <div className="small">Document</div>
+                   </div>
+                   
+                   <input 
+                     type="file"
+                     ref={fileInputRef}
+                     style={{ display: 'none' }}
+                     onChange={handleAttachmentUpload}
+                   />
+                 </div>
+               )}
+               
+               <form onSubmit={sendMessage}>
+                 <div className="input-group">
+                   <button
+                     type="button"
+                     className="btn btn-dark border-secondary"
+                     onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}
+                   >
+                     <FontAwesomeIcon icon={faPaperclip} />
+                   </button>
+                   
+                   <button
+                     type="button"
+                     className="btn btn-dark border-secondary"
+                   >
+                     <FontAwesomeIcon icon={faSmile} />
+                   </button>
+                   
+                   <input 
+                     type="text"
+                     className="form-control bg-dark text-white border-secondary"
+                     placeholder="Scrie un mesaj"
+                     value={newMessage}
+                     onChange={handleInputChange}
+                     onBlur={stopTyping}
+                   />
+                   
+                   <button 
+                     type="submit" 
+                     className="btn btn-primary"
+                     disabled={newMessage.trim() === ''}
+                   >
+                     <FontAwesomeIcon icon={faPaperPlane} />
+                   </button>
+                 </div>
+               </form>
+             </div>
+           </div>
+         ) : (
+           // Nicio conversație selectată - afișăm lista de chat-uri
+           <div className="chat-list-container">
              <div className="p-3 border-bottom border-secondary">
                <div className="d-flex justify-content-between align-items-center mb-2">
                  <h5 className="mb-0">Conversații</h5>
@@ -1068,7 +1348,7 @@ const Chat = () => {
                </div>
              </div>
              
-             <div className="chat-list" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+             <div className="chat-list" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
                {loading ? (
                  <div className="p-3 text-center">
                    <div className="spinner-border text-primary" role="status">
@@ -1077,8 +1357,22 @@ const Chat = () => {
                    <div className="mt-2">Se încarcă conversațiile...</div>
                  </div>
                ) : chats.length === 0 ? (
-                 <div className="p-3 text-center text-muted">
-                   Nu există conversații
+                 <div className="p-5 text-center text-muted">
+                   <div className="mb-4">
+                     <FontAwesomeIcon icon={faUsers} style={{ fontSize: '48px', opacity: '0.5' }} />
+                   </div>
+                   <h5>Nu există conversații</h5>
+                   <p className="mt-3">Începe o conversație nouă</p>
+                   <button 
+                     className="btn btn-primary mt-2"
+                     onClick={() => {
+                       fetchAvailableUsers();
+                       setShowNewChatModal(true);
+                     }}
+                   >
+                     <FontAwesomeIcon icon={faUserPlus} className="me-2" />
+                     Conversație nouă
+                   </button>
                  </div>
                ) : (
                  chats
@@ -1090,12 +1384,11 @@ const Chat = () => {
                    .map(chat => (
                      <div 
                        key={chat._id} 
-                       className={`chat-item p-3 ${selectedChat && selectedChat._id === chat._id ? 'active' : ''}`}
+                       className="chat-item p-3"
                        onClick={() => setSelectedChat(chat)}
                        style={{ 
                          cursor: 'pointer', 
                          borderBottom: '1px solid #2a2a2a',
-                         backgroundColor: selectedChat && selectedChat._id === chat._id ? '#2a2a2a' : '',
                          position: 'relative'
                        }}
                      >
@@ -1188,309 +1481,7 @@ const Chat = () => {
                )}
              </div>
            </div>
-         </div>
-         
-         {/* Zona principală de chat */}
-         <div className="col-lg-8">
-           <div className="content-card bg-dark text-white border border-secondary rounded" style={{ height: '80vh', display: 'flex', flexDirection: 'column' }}>
-             {!selectedChat ? (
-               <div className="d-flex align-items-center justify-content-center h-100 text-muted">
-                 <div className="text-center">
-                   <div className="mb-4">
-                     <FontAwesomeIcon icon={faUsers} style={{ fontSize: '48px', opacity: '0.5' }} />
-                   </div>
-                   <h4>Selectează o conversație pentru a începe</h4>
-                   <p className="mt-3">sau</p>
-                   <button 
-                     className="btn btn-primary mt-2"
-                     onClick={() => {
-                       fetchAvailableUsers();
-                       setShowNewChatModal(true);
-                     }}
-                   >
-                     <FontAwesomeIcon icon={faUserPlus} className="me-2" />
-                     Începe o conversație nouă
-                   </button>
-                 </div>
-               </div>
-             ) : (
-               <>
-                 {/* Header chat */}
-                 <div className="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
-                   <div className="d-flex align-items-center">
-                     <button 
-                       className="btn btn-sm btn-dark d-lg-none me-2"
-                       onClick={() => setSelectedChat(null)}
-                     >
-                       <FontAwesomeIcon icon={faArrowLeft} />
-                     </button>
-                     <div className="d-flex align-items-center">
-                       {selectedChat.isGroupChat ? (
-                         <div 
-                           className="rounded-circle d-flex align-items-center justify-content-center text-white me-2"
-                           style={{ 
-                             width: '40px', 
-                             height: '40px',
-                             backgroundColor: '#0d6efd',
-                             fontSize: '18px'
-                           }}
-                         >
-                           {selectedChat.name.charAt(0)}
-                         </div>
-                       ) : (
-                         <div 
-                           className="rounded-circle d-flex align-items-center justify-content-center text-white me-2"
-                           style={{ 
-                             width: '40px', 
-                             height: '40px',
-                             backgroundColor: '#198754',
-                             fontSize: '18px'
-                           }}
-                         >
-                           {selectedChat.users.find(u => u._id !== user._id)?.name.charAt(0) || '?'}
-                         </div>
-                       )}
-                       <div>
-                         <h5 className="mb-0">{selectedChat.name}</h5>
-                         <small className="text-muted">
-                           {selectedChat.isGroupChat 
-                             ? `${selectedChat.users.length} participanți` 
-                             : 'Online'}
-                         </small>
-                       </div>
-                     </div>
-                   </div>
-                   <div>
-                     <button 
-                       className="btn btn-dark btn-sm"
-                       onClick={() => setShowSearch(!showSearch)}
-                     >
-                       <FontAwesomeIcon icon={faSearch} />
-                     </button>
-                     <button className="btn btn-dark btn-sm ms-2">
-                       <FontAwesomeIcon icon={faEllipsisV} />
-                     </button>
-                   </div>
-                 </div>
-                 
-                 {/* Bara de căutare în chat */}
-                 {showSearch && (
-                   <div className="p-2 border-bottom border-secondary" style={{ backgroundColor: '#2a2a2a' }}>
-                     <div className="input-group">
-                       <input 
-                         type="text" 
-                         className="form-control bg-dark text-white border-secondary"
-                         placeholder="Caută în conversație" 
-                         value={searchTerm}
-                         onChange={(e) => setSearchTerm(e.target.value)}
-                       />
-                       <button 
-                         className="btn btn-outline-secondary" 
-                         type="button"
-                         onClick={() => setShowSearch(false)}
-                       >
-                         <FontAwesomeIcon icon={faTimes} />
-                       </button>
-                     </div>
-                   </div>
-                 )}
-                 
-                 {/* Zona pentru răspuns la mesaj */}
-                 {replyTo && (
-                   <div 
-                     className="p-2 d-flex justify-content-between align-items-center border-bottom border-secondary"
-                     style={{ backgroundColor: '#2a2a2a' }}
-                   >
-                     <div className="d-flex align-items-center flex-grow-1">
-                       <FontAwesomeIcon icon={faReply} className="me-2 text-primary" />
-                       <div className="border-start border-primary ps-2" style={{ borderLeftWidth: '3px !important' }}>
-                         <div className="text-primary small">
-                           Răspuns către {replyTo.sender.name}
-                         </div>
-                         <div className="small text-truncate" style={{ maxWidth: '300px' }}>
-                           {replyTo.deletedForAll ? (
-                             <span className="fst-italic">Acest mesaj a fost șters</span>
-                           ) : replyTo.content ? (
-                             replyTo.content
-                           ) : (
-                             `[${
-                               replyTo.attachmentType === 'image' ? 'Imagine' :
-                               replyTo.attachmentType === 'audio' ? 'Audio' :
-                               replyTo.attachmentType === 'video' ? 'Video' : 'Document'
-                             }]`
-                           )}
-                         </div>
-                       </div>
-                     </div>
-                     <button 
-                       className="btn btn-sm text-muted" 
-                       onClick={() => setReplyTo(null)}
-                     >
-                       <FontAwesomeIcon icon={faTimes} />
-                     </button>
-                   </div>
-                 )}
-                 
-                 {/* Container mesaje */}
-                 <div 
-                   className="flex-grow-1 p-3" 
-                   ref={chatContainerRef}
-                   style={{ 
-                     overflowY: 'auto',
-                     backgroundColor: '#1a1a1a',
-                     backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
-                     backgroundSize: '20px 20px'
-                   }}
-                 >
-                   {messagesLoading && messages.length === 0 ? (
-                     <div className="text-center my-3">
-                       <div className="spinner-border text-primary" role="status">
-                         <span className="visually-hidden">Se încarcă...</span>
-                       </div>
-                       <div className="mt-2 text-muted">Se încarcă mesajele...</div>
-                     </div>
-                   ) : messages.length === 0 ? (
-                     <div className="text-center my-3 text-muted">
-                       <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: '24px' }} className="mb-2" />
-                       <div>Nu există mesaje în această conversație</div>
-                       <div className="mt-2">Trimite primul mesaj pentru a începe conversația!</div>
-                     </div>
-                   ) : (
-                     <>
-                       {/* Indicator pentru încărcarea mesajelor mai vechi */}
-                       {messagesLoading && (
-                         <div className="text-center my-2">
-                           <div className="spinner-border spinner-border-sm text-primary" role="status">
-                             <span className="visually-hidden">Se încarcă...</span>
-                           </div>
-                           <div className="small text-muted mt-1">Se încarcă mesaje mai vechi...</div>
-                         </div>
-                       )}
-                       
-                       {/* Lista de mesaje */}
-                       {messages.map((message, index) => (
-                         <MessageItem 
-                           key={message._id} 
-                           message={message} 
-                           isLast={index === messages.length - 1}
-                         />
-                       ))}
-                       
-                       {/* Indicator typing */}
-                       {typingUsers.length > 0 && (
-                         <div className="small text-muted mt-2 mb-1 ms-2">
-                           {typingUsers.length === 1 ? (
-                             <div>Un utilizator scrie...</div>
-                           ) : (
-                             <div>Mai mulți utilizatori scriu...</div>
-                           )}
-                         </div>
-                       )}
-                     </>
-                   )}
-                 </div>
-                 
-                 {/* Footer chat pentru trimitere mesaje */}
-                 <div className="p-2 border-top border-secondary" style={{ backgroundColor: '#2a2a2a' }}>
-                   {/* Opțiuni pentru atașamente */}
-                   {showAttachmentOptions && (
-                     <div 
-                       className="d-flex mb-2 p-2 rounded"
-                       style={{ backgroundColor: '#333' }}
-                     >
-                       <div 
-                         className="text-center mx-2"
-                         style={{ cursor: 'pointer' }}
-                         onClick={() => {
-                           fileInputRef.current.accept = "image/*";
-                           fileInputRef.current.click();
-                         }}
-                       >
-                         <div 
-                           className="rounded-circle d-flex align-items-center justify-content-center mb-1"
-                           style={{ 
-                             width: '40px', 
-                             height: '40px',
-                             backgroundColor: '#0d6efd',
-                             color: 'white'
-                           }}
-                         >
-                           <FontAwesomeIcon icon={faCamera} />
-                         </div>
-                         <div className="small">Imagine</div>
-                       </div>
-                       
-                       <div 
-                         className="text-center mx-2"
-                         style={{ cursor: 'pointer' }}
-                         onClick={() => {
-                           fileInputRef.current.accept = ".pdf,.doc,.docx,.xls,.xlsx,.txt";
-                           fileInputRef.current.click();
-                         }}
-                       >
-                         <div 
-                           className="rounded-circle d-flex align-items-center justify-content-center mb-1"
-                           style={{ 
-                             width: '40px', 
-                             height: '40px',
-                             backgroundColor: '#198754',
-                             color: 'white'
-                           }}
-                         >
-                           <FontAwesomeIcon icon={faPaperclip} />
-                         </div>
-                         <div className="small">Document</div>
-                       </div>
-                       
-                       <input 
-                         type="file"
-                         ref={fileInputRef}
-                         style={{ display: 'none' }}
-                         onChange={handleAttachmentUpload}
-                       />
-                     </div>
-                   )}
-                   
-                   <form onSubmit={sendMessage}>
-                     <div className="input-group">
-                       <button
-                         type="button"
-                         className="btn btn-dark border-secondary"
-                         onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}
-                       >
-                         <FontAwesomeIcon icon={faPaperclip} />
-                       </button>
-                       
-                       <button
-                         type="button"
-                         className="btn btn-dark border-secondary"
-                       >
-                         <FontAwesomeIcon icon={faSmile} />
-                       </button>
-                       
-                       <input 
-                         type="text"
-                         className="form-control bg-dark text-white border-secondary"
-                         placeholder="Scrie un mesaj"
-                         value={newMessage}
-                         onChange={handleInputChange}
-                         onBlur={stopTyping}
-                       />
-                       
-                       <button 
-                         type="submit" 
-                         className="btn btn-primary"
-                         disabled={newMessage.trim() === ''}
-                       >
-                         <FontAwesomeIcon icon={faPaperPlane} />
-                       </button>
-                     </div>
-                   </form>
-                 </div>
-               </>
-             )}
-           </div>
-         </div>
+         )}
        </div>
      </div>
      
