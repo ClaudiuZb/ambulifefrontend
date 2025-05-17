@@ -52,7 +52,6 @@ const Chat = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [newGroupName, setNewGroupName] = useState('');
   const [userSearchTerm, setUserSearchTerm] = useState('');
-  const [orientation, setOrientation] = useState(window.innerHeight > window.innerWidth ? 'portrait' : 'landscape');
   
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -61,121 +60,246 @@ const Chat = () => {
   const requestPendingRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
 
-  // Detectează orientarea ecranului
+  // Adăugăm CSS pentru a rezolva problemele de afișare pe mobil
   useEffect(() => {
-    const handleResize = () => {
-      setOrientation(window.innerHeight > window.innerWidth ? 'portrait' : 'landscape');
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
-  }, []);
-
-  // Adăugăm CSS pentru Chat component - pentru mobile-optimized
-  useEffect(() => {
-    // Verificăm dacă există deja stilul
-    if (!document.getElementById('chat-component-styles')) {
+    if (!document.getElementById('chat-fix-styles')) {
       const styleTag = document.createElement('style');
-      styleTag.id = 'chat-component-styles';
+      styleTag.id = 'chat-fix-styles';
       styleTag.innerHTML = `
-        /* Ascunde sidebar-ul pe pagina de chat pentru mobil */
+        /* Resetare CSS pentru pagina de chat */
+        .main-content {
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
+          overflow-x: hidden !important;
+        }
+        
+        /* Ascunde sidebar-ul pe pagina de chat */
         body.chat-page .sidebar {
           display: none !important;
         }
         
-        /* Setează înălțimea containerului de chat la full viewport */
+        /* Container principal pentru chat */
         .chat-container {
-          height: 100vh !important;
+          display: block !important;
+          min-height: 100vh !important;
           width: 100% !important;
           overflow: hidden !important;
+          background-color: #121212 !important;
         }
         
-        /* Resetează marginile și padding pentru main-content pe mobile */
-        .main-content {
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-        
-        /* Fix pentru liste în diferite orientări */
-        .chat-list {
-          max-height: calc(100vh - 110px) !important;
-          overflow-y: auto !important;
-          width: 100% !important;
-        }
-        
-        /* Asigură-te că elementele din listă sunt întotdeauna vizibile indiferent de orientare */
-        .chat-item {
-          display: flex !important;
-          width: 100% !important;
-        }
-        
-        /* Fix pentru headerul chat */
+        /* Header pentru chat */
         .chat-header {
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-          width: 100% !important;
-        }
-        
-        /* Adaptează containerul de mesaje */
-        .chat-messages-container {
-          overflow-y: auto !important;
-          flex: 1 !important;
-          width: 100% !important;
-        }
-        
-        /* Chat footer fixed pentru inputul de mesaje */
-        .chat-footer {
-          position: sticky;
-          bottom: 0;
+          display: flex !important;
+          visibility: visible !important;
           width: 100% !important;
           background-color: #1a1a1a !important;
-          z-index: 1000;
+          border-bottom: 1px solid #333 !important;
+          z-index: 100 !important;
         }
         
-        /* Optimizări specifice pentru orientare portrait */
-        @media screen and (orientation: portrait) {
-          .chat-list-container {
-            height: calc(100vh - 60px) !important;
-            overflow-y: auto !important;
-          }
+        /* Lista de chat-uri - fix pentru vizibilitate */
+        .chat-list-view {
+          display: block !important;
+          visibility: visible !important;
+          height: calc(100vh - 110px) !important;
+          width: 100% !important;
+          overflow-y: auto !important;
+          z-index: 10 !important;
+          background-color: #121212 !important;
         }
         
-        /* Optimizări specifice pentru orientare landscape */
-        @media screen and (orientation: landscape) {
-          .chat-list-container {
-            height: calc(100vh - 60px) !important;
-            overflow-y: auto !important;
+        /* Items din listă */
+        .chat-item {
+          display: flex !important;
+          visibility: visible !important;
+          width: 100% !important;
+          padding: 10px !important;
+          border-bottom: 1px solid #333 !important;
+          background-color: #121212 !important;
+        }
+        
+        /* Force visibility pentru conținutul conversațiilor */
+        .chat-item-content {
+          display: flex !important;
+          visibility: visible !important;
+          width: 100% !important;
+        }
+        
+        /* Zona de mesaje când e selectat un chat */
+        .messages-container {
+          flex: 1 !important;
+          overflow-y: auto !important;
+          width: 100% !important;
+          background-color: #121212 !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+        
+        /* Bara de input pentru mesaje */
+        .message-input-container {
+          position: sticky !important;
+          bottom: 0 !important;
+          width: 100% !important;
+          background-color: #1a1a1a !important;
+          border-top: 1px solid #333 !important;
+          padding: 8px !important;
+          z-index: 100 !important;
+        }
+        
+        /* Overlay pentru a preveni probleme de eveniment click */
+        .modal-backdrop {
+          z-index: 1040 !important;
+        }
+        
+        /* Modals pentru creare chat-uri noi */
+        .modal-content {
+          z-index: 1050 !important;
+        }
+        
+        /* Asigură că CSS-ul funcționează în ambele orientări */
+        @media screen and (orientation: portrait), screen and (orientation: landscape) {
+          .chat-item {
+            visibility: visible !important;
+            display: flex !important;
           }
           
-          .chat-item {
-            padding: 5px 10px !important;
+          .chat-list-view {
+            display: block !important;
+            visibility: visible !important;
+          }
+          
+          .chat-active-view {
+            height: 100vh !important;
+            width: 100% !important;
           }
         }
       `;
       document.head.appendChild(styleTag);
       
-      // Adăugă clasa chat-page la body
+      // Marchează pagina pentru a putea aplica stiluri specifice
       document.body.classList.add('chat-page');
     }
     
     return () => {
-      // Curățăm stilul când componenta este demontată
-      const styleTag = document.getElementById('chat-component-styles');
+      // Curăță stilul când componenta este demontată
+      const styleTag = document.getElementById('chat-fix-styles');
       if (styleTag) {
         document.head.removeChild(styleTag);
       }
-      // Elimină clasa chat-page din body
       document.body.classList.remove('chat-page');
     };
   }, []);
 
-  // Fetch chats logic
+  // Inițializăm socket-ul
+  useEffect(() => {
+    if (user) {
+      try {
+        const newSocket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin, {
+          transports: ['websocket', 'polling'],
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
+          timeout: 20000
+        });
+        
+        setSocket(newSocket);
+        
+        newSocket.on('connect', () => {
+          console.log('Socket connected successfully');
+          newSocket.emit('setup', user);
+        });
+        
+        newSocket.on('connect_error', (error) => {
+          console.error('Socket connection error:', error);
+          setError('Eroare la conectarea la server. Încercăm să reconectăm...');
+        });
+        
+        newSocket.on('typing', (data) => {
+          if (selectedChat && selectedChat._id === data.chatId) {
+            setTypingUsers(prevUsers => {
+              if (!prevUsers.includes(data.userId)) {
+                return [...prevUsers, data.userId];
+              }
+              return prevUsers;
+            });
+          }
+        });
+        
+        newSocket.on('stop_typing', (data) => {
+          if (selectedChat && selectedChat._id === data.chatId) {
+            setTypingUsers(prevUsers => prevUsers.filter(id => id !== data.userId));
+          }
+        });
+        
+        newSocket.on('new_message', (newMessage) => {
+          if (selectedChat && selectedChat._id === newMessage.chat) {
+            setMessages(prev => [...prev, newMessage]);
+            markMessageAsRead(newMessage._id, newMessage.chat);
+            updateChatLastMessage(newMessage);
+            
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          } else {
+            updateUnreadCount(newMessage.chat);
+          }
+        });
+        
+        newSocket.on('message_deleted_for_all', ({ messageId, chatId }) => {
+          if (selectedChat && selectedChat._id === chatId) {
+            setMessages(prev => prev.map(msg => 
+              msg._id === messageId ? { ...msg, deletedForAll: true } : msg
+            ));
+          }
+        });
+        
+        newSocket.on('message_read', ({ messageId, chatId, userId }) => {
+          if (selectedChat && selectedChat._id === chatId) {
+            setMessages(prev => prev.map(msg => 
+              msg._id === messageId ? { 
+                ...msg, 
+                read: [...msg.read, { user: userId, readAt: new Date() }] 
+              } : msg
+            ));
+          }
+        });
+        
+        return () => {
+          newSocket.disconnect();
+        };
+      } catch (err) {
+        console.error('Socket initialization error:', err);
+        setError('Eroare la inițializarea chat-ului în timp real');
+      }
+    }
+  }, [user, selectedChat]);
+
+  // Fetch utilizatori disponibili pentru chat nou
+  const fetchAvailableUsers = async () => {
+    try {
+      const res = await axios.get('/api/users');
+      
+      if (res.data.success) {
+        setAvailableUsers(res.data.data.filter(u => u._id !== user._id));
+      }
+    } catch (err) {
+      console.error('Eroare la obținerea utilizatorilor:', err);
+      setError('Nu s-au putut obține utilizatorii');
+    }
+  };
+
+  // Adăugăm chat-ul selectat la room-ul de socket
+  useEffect(() => {
+    if (socket && selectedChat) {
+      socket.emit('join_chat', selectedChat._id);
+      setMessages([]);
+      setPage(1);
+      setHasMore(true);
+      initialScrollDoneRef.current = false;
+    }
+  }, [socket, selectedChat]);
+
+  // Obținem lista de chat-uri
   useEffect(() => {
     const fetchChats = async () => {
       if (requestPendingRef.current) return;
@@ -205,10 +329,56 @@ const Chat = () => {
       fetchChats();
     }
   }, [user]);
-  
-  // Celelălte funcții de logică existente...
-  
-  // Fetch messages and other logic...
+
+  // Creează un chat privat nou
+  const createPrivateChat = async (userId) => {
+    try {
+      const res = await axios.post('/api/chat/private', { userId });
+      
+      if (res.data.success) {
+        setChats(prev => [res.data.data, ...prev]);
+        setSelectedChat(res.data.data);
+        setShowNewChatModal(false);
+      } else {
+        setError('Nu s-a putut crea conversația');
+      }
+    } catch (err) {
+      console.error('Eroare la crearea conversației:', err);
+      setError(err.response?.data?.message || 'Eroare la crearea conversației');
+    }
+  };
+
+  // Creează un chat de grup nou
+  const createGroupChat = async (e) => {
+    e.preventDefault();
+    
+    if (!newGroupName.trim() || selectedUsers.length < 2) {
+      setError('Completați numele grupului și selectați cel puțin 2 utilizatori');
+      return;
+    }
+    
+    try {
+      const res = await axios.post('/api/chat/group', {
+        name: newGroupName,
+        users: selectedUsers
+      });
+      
+      if (res.data.success) {
+        setChats(prev => [res.data.data, ...prev]);
+        setSelectedChat(res.data.data);
+        setNewGroupName('');
+        setSelectedUsers([]);
+        setShowNewGroupModal(false);
+      } else {
+        setError('Nu s-a putut crea grupul');
+      }
+    } catch (err) {
+      console.error('Eroare la crearea grupului:', err);
+      setError(err.response?.data?.message || 'Eroare la crearea grupului');
+    }
+  };
+
+  // Obținem mesajele pentru chat-ul selectat
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
@@ -219,20 +389,15 @@ const Chat = () => {
         const res = await axios.get(`/api/messages/${selectedChat._id}?page=1`);
         
         if (res.data.success) {
-          // Asigurăm-ne că mesajele sunt în ordine cronologică
           setMessages(res.data.data.sort((a, b) => 
             new Date(a.createdAt) - new Date(b.createdAt)
           ));
           setHasMore(res.data.pagination.next !== undefined);
           setError(null);
           
-          // Marcăm toate mesajele ca citite
           markChatAsRead(selectedChat._id);
-          
-          // Actualizăm contorul de mesaje necitite din UI
           updateChatUnreadCount(selectedChat._id, 0);
           
-          // Auto-scroll la ultimul mesaj după încărcare
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
             initialScrollDoneRef.current = true;
@@ -250,8 +415,87 @@ const Chat = () => {
 
     fetchMessages();
   }, [selectedChat]);
-  
-  // Funcțiile necesare pentru a face chatul să funcționeze
+
+  // Filtrează utilizatorii disponibili pentru chat nou
+  const filteredAvailableUsers = availableUsers.filter(u => 
+    u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    (u.email && u.email.toLowerCase().includes(userSearchTerm.toLowerCase()))
+  );
+
+  // Toggle selecție utilizator pentru grup
+  const toggleUserSelection = (userId) => {
+    if (selectedUsers.includes(userId)) {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+    } else {
+      setSelectedUsers(prev => [...prev, userId]);
+    }
+  };
+
+  // Funcție pentru a încărca mesaje mai vechi când facem scroll în sus
+  const loadMoreMessages = async () => {
+    if (!hasMore || messagesLoading || !selectedChat) return;
+    
+    setMessagesLoading(true);
+    
+    try {
+      const nextPage = page + 1;
+      
+      const scrollContainer = chatContainerRef.current;
+      const scrollHeight = scrollContainer.scrollHeight;
+      
+      const res = await axios.get(`/api/messages/${selectedChat._id}?page=${nextPage}`);
+      
+      if (res.data.success) {
+        if (res.data.data.length > 0) {
+          const oldMessages = res.data.data.sort((a, b) => 
+            new Date(a.createdAt) - new Date(b.createdAt)
+          );
+          
+          setMessages(prev => [...oldMessages, ...prev]);
+          setPage(nextPage);
+          setHasMore(res.data.pagination.next !== undefined);
+          
+          if (scrollContainer) {
+            setTimeout(() => {
+              scrollContainer.scrollTop = scrollContainer.scrollHeight - scrollHeight;
+            }, 10);
+          }
+        } else {
+          setHasMore(false);
+        }
+      } else {
+        setError('Nu s-au putut obține mesajele mai vechi');
+      }
+    } catch (err) {
+      console.error('Eroare la încărcarea mesajelor vechi:', err);
+      setError(err.response?.data?.message || 'Eroare la încărcarea mesajelor vechi');
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  // Detectăm când utilizatorul face scroll în sus pentru a încărca mesaje mai vechi
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    
+    const handleScroll = () => {
+      if (container && container.scrollTop < 50 && hasMore && !messagesLoading) {
+        loadMoreMessages();
+      }
+    };
+    
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+    }
+    
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [hasMore, messagesLoading, selectedChat]);
+
+  // Funcție pentru a actualiza contorul de mesaje necitite
   const updateUnreadCount = (chatId) => {
     setChats(prev => prev.map(chat => {
       if (chat._id === chatId) {
@@ -264,6 +508,7 @@ const Chat = () => {
     }));
   };
 
+  // Funcție pentru a actualiza ultimul mesaj în lista de chat-uri
   const updateChatLastMessage = (message) => {
     setChats(prev => prev.map(chat => {
       if (chat._id === message.chat) {
@@ -276,6 +521,7 @@ const Chat = () => {
     }));
   };
 
+  // Funcție pentru a reseta contorul de mesaje necitite pentru un chat
   const updateChatUnreadCount = (chatId, count) => {
     setChats(prev => prev.map(chat => {
       if (chat._id === chatId) {
@@ -288,6 +534,7 @@ const Chat = () => {
     }));
   };
 
+  // Funcție pentru a marca un chat ca citit
   const markChatAsRead = async (chatId) => {
     try {
       await axios.put('/api/messages/read', { chatId });
@@ -296,6 +543,7 @@ const Chat = () => {
     }
   };
 
+  // Funcție pentru a marca un mesaj specific ca citit
   const markMessageAsRead = async (messageId, chatId) => {
     try {
       await axios.put('/api/messages/read', { messageId, chatId });
@@ -304,6 +552,7 @@ const Chat = () => {
     }
   };
 
+  // Funcție pentru a trimite un mesaj
   const sendMessage = async (e) => {
     e.preventDefault();
     
@@ -350,20 +599,136 @@ const Chat = () => {
     }
   };
 
-  // Refresh button pentru reîncărcarea datelor în caz de probleme
-  const refreshData = async () => {
-    setChats([]);
-    setError(null);
+  // Funcții pentru typing indicator
+  const startTyping = () => {
+    if (!socket || !selectedChat) return;
+    
+    socket.emit('typing', { chatId: selectedChat._id, userId: user._id });
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(stopTyping, 3000);
+  };
+
+  const stopTyping = () => {
+    if (!socket || !selectedChat) return;
+    
+    socket.emit('stop_typing', { chatId: selectedChat._id, userId: user._id });
+  };
+
+  // Handler pentru input de mesaj
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    // Activăm indicatorul de typing
+    if (typingUsers.indexOf(user._id) === -1) {
+      startTyping();
+    }
+  };
+
+  // Funcție pentru a șterge un mesaj
+  const deleteMessage = async (messageId, deleteForAll = false) => {
+    try {
+      await axios.delete(`/api/messages/${messageId}${deleteForAll ? '?deleteForAll=true' : ''}`);
+      
+      if (deleteForAll) {
+        // Socket.io va actualiza UI-ul pentru toți utilizatorii
+      } else {
+        // Actualizăm doar UI-ul local
+        setMessages(prev => prev.filter(msg => msg._id !== messageId));
+      }
+      
+      // Închidem meniul contextual
+      setContextMenu({ visible: false, x: 0, y: 0, messageId: null });
+    } catch (error) {
+      console.error('Eroare la ștergerea mesajului:', error);
+      setError(error.response?.data?.message || 'Eroare la ștergerea mesajului');
+    }
+  };
+
+  // Funcție pentru a trimite un atașament
+  const handleAttachmentUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('chatId', selectedChat._id);
+    
+    if (replyTo) {
+      formData.append('replyToId', replyTo._id);
+    }
+    
+    if (newMessage.trim() !== '') {
+      formData.append('content', newMessage);
+    }
     
     try {
-      const res = await axios.get('/api/chat');
+      const res = await axios.post('/api/messages/attachment', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
       if (res.data.success) {
-        setChats(res.data.data);
+        // Resetăm câmpul de mesaj și reply
+        setNewMessage('');
+        setReplyTo(null);
+        
+        // Adăugăm mesajul în lista locală
+        setMessages(prev => [...prev, res.data.data]);
+        
+        // Actualizăm ultimul mesaj în lista de chat-uri
+        updateChatLastMessage(res.data.data);
+        
+        // Ascundem opțiunile de atașament
+        setShowAttachmentOptions(false);
+        
+        // Scroll la ultimul mesaj
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        throw new Error('Eroare la încărcarea atașamentului');
       }
-    } catch (err) {
-      console.error('Eroare la reîmprospătarea datelor:', err);
-      setError('Nu s-au putut reîncărca datele. Încercați din nou.');
+    } catch (error) {
+      console.error('Eroare la încărcarea atașamentului:', error);
+      setError(error.response?.data?.message || 'Eroare la încărcarea atașamentului');
     }
+  };
+
+  // Funcție pentru a deschide meniul contextual
+  const handleMessageContextMenu = (e, messageId) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      messageId
+    });
+  };
+
+  // Funcție pentru a închide meniul contextual când se face click în altă parte
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu({ visible: false, x: 0, y: 0, messageId: null });
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [contextMenu]);
+
+  // Funcție pentru a răspunde la un mesaj
+  const handleReplyMessage = (message) => {
+    setReplyTo(message);
+    setContextMenu({ visible: false, x: 0, y: 0, messageId: null });
   };
 
   // Componenta pentru afișarea unui mesaj
@@ -377,7 +742,7 @@ const Chat = () => {
     return (
       <div 
         className={`mb-2 d-flex ${isMine ? 'justify-content-end' : 'justify-content-start'}`}
-        style={{ maxWidth: '100%' }}
+        onContextMenu={(e) => handleMessageContextMenu(e, message._id)}
       >
         <div style={{ maxWidth: '80%' }}>
           {/* Mesaj de reply */}
@@ -397,7 +762,7 @@ const Chat = () => {
                 <div className="text-primary">
                   {message.replyTo.sender.name}
                 </div>
-                <div className="text-truncate" style={{ maxWidth: '160px' }}>
+                <div className="text-truncate" style={{ maxWidth: '200px' }}>
                   {message.replyTo.deletedForAll ? (
                     <span className="fst-italic">Acest mesaj a fost șters</span>
                   ) : (
@@ -414,7 +779,7 @@ const Chat = () => {
           )}
           
           <div 
-            className={`p-2 rounded ${
+            className={`p-3 rounded ${
               isMine 
                 ? 'bg-primary text-white' 
                 : 'bg-dark text-white border border-secondary'
@@ -510,95 +875,294 @@ const Chat = () => {
     );
   };
 
-  // Stiluri pentru componenta Chat
+  // Stiluri pentru componentă
   const styles = {
     container: {
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
+      minHeight: '100vh',
       width: '100%',
       backgroundColor: '#121212',
+      display: 'flex',
+      flexDirection: 'column',
     },
-    chatHeader: {
-      padding: '8px 12px',
-      backgroundColor: '#1a1a1a',
-      borderBottom: '1px solid #333',
+    header: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
+      padding: '10px',
+      backgroundColor: '#1a1a1a',
+      borderBottom: '1px solid #333',
+    },
+    searchBar: {
+      padding: '8px',
+      backgroundColor: '#1a1a1a',
+      borderBottom: '1px solid #333',
     },
     chatListContainer: {
-      height: 'calc(100vh - 60px)',
+      flex: '1',
       overflowY: 'auto',
       backgroundColor: '#121212',
     },
-    chatList: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
-    },
-    chatItem: {
-      padding: orientation === 'portrait' ? '10px' : '8px 10px',
-      borderBottom: '1px solid #2a2a2a',
-      cursor: 'pointer',
-      backgroundColor: '#121212',
-      width: '100%',
-    },
-    messageContainer: {
-      flex: 1,
+    messagesList: {
+      flex: '1',
       overflowY: 'auto',
       padding: '10px',
       backgroundColor: '#121212',
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 120px)',
     },
     inputBar: {
-      padding: '8px 10px',
+      padding: '8px',
       backgroundColor: '#1a1a1a',
       borderTop: '1px solid #333',
     },
-    searchBar: {
-      padding: '8px 10px',
-      backgroundColor: '#1a1a1a',
-      borderBottom: '1px solid #333',
-    },
     errorAlert: {
-      margin: '8px 10px',
+      margin: '8px',
       padding: '8px 12px',
       backgroundColor: 'rgba(220, 53, 69, 0.2)',
       color: '#dc3545',
       borderRadius: '4px',
-      fontSize: '13px',
+      fontSize: '0.875rem',
       display: 'flex',
       alignItems: 'center',
-    },
-    emptyState: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100%',
-      padding: '20px',
-      color: '#999',
-    },
-    loadingState: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      color: '#999',
-    },
+    }
+  };
+
+  // Modal pentru chat nou privat
+  const NewChatModal = () => (
+    <div className="modal fade show" style={{ display: showNewChatModal ? 'block' : 'none', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content bg-dark text-white border border-secondary">
+          <div className="modal-header border-secondary">
+            <h5 className="modal-title">Conversație nouă</h5>
+            <button type="button" className="btn-close btn-close-white" onClick={() => setShowNewChatModal(false)}></button>
+          </div>
+          <div className="modal-body">
+            <div className="mb-3">
+              <div className="input-group input-group-sm">
+                <span className="input-group-text bg-dark text-white border-secondary">
+                  <FontAwesomeIcon icon={faSearch} />
+                </span>
+                <input 
+                  type="text"
+                  className="form-control form-control-sm bg-dark text-white border-secondary"
+                  placeholder="Caută un utilizator"
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="user-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {filteredAvailableUsers.length === 0 ? (
+                <div className="text-center text-muted p-3">
+                  Nu există utilizatori disponibili
+                </div>
+              ) : (
+                filteredAvailableUsers.map(user => (
+                  <div 
+                    key={user._id} 
+                    className="user-item p-2 d-flex align-items-center border-bottom border-secondary"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => createPrivateChat(user._id)}
+                  >
+                    <div 
+                      className="rounded-circle d-flex align-items-center justify-content-center text-white me-3"
+                      style={{ 
+                        width: '40px', 
+                        height: '40px',
+                        backgroundColor: '#333',
+                        fontSize: '18px'
+                      }}
+                    >
+                      {user.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="fw-bold">{user.name}</div>
+                      {user.email && (
+                        <div className="small text-muted">{user.email}</div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="modal-footer border-secondary">
+            <button 
+              type="button" 
+              className="btn btn-secondary btn-sm" 
+              onClick={() => setShowNewChatModal(false)}
+            >
+              Anulează
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Modal pentru grup nou
+  const NewGroupModal = () => (
+    <div className="modal fade show" style={{ display: showNewGroupModal ? 'block' : 'none', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content bg-dark text-white border border-secondary">
+          <div className="modal-header border-secondary">
+            <h5 className="modal-title">Grup nou</h5>
+            <button type="button" className="btn-close btn-close-white" onClick={() => setShowNewGroupModal(false)}></button>
+          </div>
+          <form onSubmit={createGroupChat}>
+            <div className="modal-body">
+              <div className="mb-3">
+                <label htmlFor="groupName" className="form-label">Numele grupului</label>
+                <input 
+                  type="text"
+                  className="form-control form-control-sm bg-dark text-white border-secondary"
+                  id="groupName"
+                  placeholder="Introduceți numele grupului"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="mb-3">
+                <label className="form-label">Selectați membrii</label>
+                <div className="input-group input-group-sm mb-2">
+                  <span className="input-group-text bg-dark text-white border-secondary">
+                    <FontAwesomeIcon icon={faSearch} />
+                  </span>
+                  <input 
+                    type="text"
+                    className="form-control form-control-sm bg-dark text-white border-secondary"
+                    placeholder="Caută utilizatori"
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                  />
+                </div>
+                
+                <div className="selected-users mb-2">
+                  {selectedUsers.length > 0 && (
+                    <div className="d-flex flex-wrap">
+                      {selectedUsers.map(userId => {
+                        const selectedUser = availableUsers.find(u => u._id === userId);
+                        return selectedUser ? (
+                          <div 
+                            key={userId}
+                            className="badge bg-primary me-1 mb-1 p-2 d-flex align-items-center"
+                          >
+                            {selectedUser.name}
+                            <button 
+                              type="button"
+                              className="btn-close btn-close-white ms-2"
+                              style={{ fontSize: '0.5rem' }}
+                              onClick={() => toggleUserSelection(userId)}
+                            ></button>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="user-list border border-secondary rounded" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {filteredAvailableUsers.length === 0 ? (
+                    <div className="text-center text-muted p-3">
+                      Nu există utilizatori disponibili
+                    </div>
+                  ) : (
+                    filteredAvailableUsers.map(user => (
+                      <div 
+                        key={user._id} 
+                        className={`user-item p-2 d-flex align-items-center border-bottom border-secondary ${
+                          selectedUsers.includes(user._id) ? 'bg-primary bg-opacity-25' : ''
+                        }`}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => toggleUserSelection(user._id)}
+                      >
+                        <div 
+                          className="rounded-circle d-flex align-items-center justify-content-center text-white me-3"
+                          style={{ 
+                            width: '40px', 
+                            height: '40px',
+                            backgroundColor: '#333',
+                            fontSize: '18px'
+                          }}
+                        >
+                          {user.name.charAt(0)}
+                        </div>
+                        <div className="flex-grow-1">
+                          <div className="fw-bold">{user.name}</div>
+                          {user.email && (
+                            <div className="small text-muted">{user.email}</div>
+                          )}
+                        </div>
+                        {selectedUsers.includes(user._id) && (
+                          <div className="text-primary">
+                            <FontAwesomeIcon icon={faCheck} />
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer border-secondary">
+              <button 
+                type="button" 
+                className="btn btn-secondary btn-sm" 
+                onClick={() => {
+                  setShowNewGroupModal(false);
+                  setNewGroupName('');
+                  setSelectedUsers([]);
+                }}
+              >
+                Anulează
+              </button>
+              <button 
+                type="submit" 
+                className="btn btn-primary btn-sm"
+                disabled={!newGroupName.trim() || selectedUsers.length < 2}
+              >
+                Creează grup
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Filtează chat-urile conform căutării
+  const filteredChats = chats.filter(chat => 
+    chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (chat.latestMessage && chat.latestMessage.content && 
+     chat.latestMessage.content.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  // Reload button pentru reîncărcare facilă
+  const refreshData = async () => {
+    setChats([]);
+    setError(null);
+    
+    try {
+      const res = await axios.get('/api/chat');
+      if (res.data.success) {
+        setChats(res.data.data);
+      }
+    } catch (err) {
+      console.error('Eroare la reîmprospătarea datelor:', err);
+      setError('Nu s-au putut reîncărca datele. Încercați din nou.');
+    }
   };
 
   return (
     <div className="chat-container" style={styles.container}>
       {selectedChat ? (
         // Vizualizare chat activ
-        <div className="d-flex flex-column h-100">
+        <div className="chat-active-view">
           {/* Header chat */}
-          <div className="chat-header" style={styles.chatHeader}>
+          <div className="chat-header" style={styles.header}>
             <button 
               className="btn btn-sm btn-dark me-2"
               onClick={() => setSelectedChat(null)}
@@ -669,27 +1233,63 @@ const Chat = () => {
             </div>
           )}
           
+          {/* Bară de răspuns la mesaj */}
+          {replyTo && (
+            <div 
+              className="p-2 d-flex justify-content-between align-items-center border-bottom border-secondary"
+              style={{ backgroundColor: '#2a2a2a' }}
+            >
+              <div className="d-flex align-items-center flex-grow-1">
+                <FontAwesomeIcon icon={faReply} className="me-2 text-primary" />
+                <div className="border-start border-primary ps-2" style={{ borderLeftWidth: '3px !important' }}>
+                  <div className="text-primary small">
+                    Răspuns către {replyTo.sender.name}
+                  </div>
+                  <div className="small text-truncate" style={{ maxWidth: '250px' }}>
+                    {replyTo.deletedForAll ? (
+                      <span className="fst-italic">Acest mesaj a fost șters</span>
+                    ) : replyTo.content ? (
+                      replyTo.content
+                    ) : (
+                      `[${
+                        replyTo.attachmentType === 'image' ? 'Imagine' :
+                        replyTo.attachmentType === 'audio' ? 'Audio' :
+                        replyTo.attachmentType === 'video' ? 'Video' : 'Document'
+                      }]`
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button 
+                className="btn btn-sm text-muted" 
+                onClick={() => setReplyTo(null)}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+          )}
+          
           {/* Container mesaje */}
           <div 
-            className="chat-messages-container" 
+            className="messages-container" 
             ref={chatContainerRef}
-            style={styles.messageContainer}
+            style={styles.messagesList}
           >
             {messagesLoading && messages.length === 0 ? (
-              <div style={styles.loadingState}>
+              <div className="text-center my-3">
                 <div className="spinner-border spinner-border-sm text-primary" role="status">
                   <span className="visually-hidden">Se încarcă...</span>
                 </div>
                 <div className="mt-2 small">Se încarcă mesajele...</div>
               </div>
             ) : messages.length === 0 ? (
-              <div style={styles.emptyState}>
+              <div className="text-center my-3 text-muted">
                 <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: '24px' }} className="mb-2" />
                 <div>Nu există mesaje</div>
                 <div className="mt-2 small">Trimite primul mesaj!</div>
               </div>
             ) : (
-              // Mesajele
+              // Lista de mesaje
               messages.map((message, index) => (
                 <MessageItem 
                   key={message._id} 
@@ -698,10 +1298,20 @@ const Chat = () => {
                 />
               ))
             )}
+            
+            {/* Indicator pentru utilizatori care scriu */}
+            {typingUsers.length > 0 && (
+              <div className="small text-muted mt-2 mb-1">
+                {typingUsers.length === 1 ? 
+                  'Un utilizator scrie...' : 
+                  'Mai mulți utilizatori scriu...'
+                }
+              </div>
+            )}
           </div>
           
-          {/* Footer pentru trimitere mesaje */}
-          <div className="chat-footer" style={styles.inputBar}>
+          {/* Bara de introducere a mesajelor */}
+          <div className="message-input-container" style={styles.inputBar}>
             <form onSubmit={sendMessage} className="d-flex align-items-center">
               <button
                 type="button"
@@ -717,7 +1327,8 @@ const Chat = () => {
                 className="form-control form-control-sm bg-dark text-white border-secondary mx-1"
                 placeholder="Scrie un mesaj"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleInputChange}
+                onBlur={stopTyping}
                 style={{ height: '36px' }}
               />
               
@@ -731,7 +1342,7 @@ const Chat = () => {
               </button>
             </form>
             
-            {/* Opțiuni pentru atașamente - afișate doar când sunt deschise */}
+            {/* Opțiuni pentru atașamente */}
             {showAttachmentOptions && (
               <div 
                 className="d-flex mt-2 p-2 rounded justify-content-start"
@@ -789,7 +1400,7 @@ const Chat = () => {
                   type="file"
                   ref={fileInputRef}
                   style={{ display: 'none' }}
-                  onChange={() => {}} // Implementarea reală aici
+                  onChange={handleAttachmentUpload}
                 />
               </div>
             )}
@@ -799,10 +1410,10 @@ const Chat = () => {
         // Vizualizare lista chat-uri
         <>
           {/* Header pentru lista de chat-uri */}
-          <div className="chat-header" style={styles.chatHeader}>
+          <div className="chat-header" style={styles.header}>
             <div className="d-flex align-items-center">
               <FontAwesomeIcon icon={faUsers} className="me-2" /> 
-              <h5 className="mb-0 fs-5">Chat</h5>
+              <h5 className="mb-0" style={{ fontSize: '1.25rem' }}>Chat</h5>
             </div>
             <div className="d-flex">
               <button 
@@ -813,7 +1424,7 @@ const Chat = () => {
               >
                 <FontAwesomeIcon icon={faSync} className={loading ? "fa-spin" : ""} />
               </button>
-              <div className="dropdown">
+              <div className="dropdown d-inline-block">
                 <button 
                   className="btn btn-sm btn-primary dropdown-toggle"
                   type="button"
@@ -823,11 +1434,14 @@ const Chat = () => {
                   <FontAwesomeIcon icon={faPlus} className="me-1" />
                   Nou
                 </button>
-               <ul className="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                <ul className="dropdown-menu dropdown-menu-dark dropdown-menu-end">
                   <li>
                     <button 
                       className="dropdown-item small" 
-                      onClick={() => setShowNewChatModal(true)}
+                      onClick={() => {
+                        fetchAvailableUsers();
+                        setShowNewChatModal(true);
+                      }}
                     >
                       <FontAwesomeIcon icon={faUser} className="me-2" />
                       Chat privat
@@ -836,7 +1450,10 @@ const Chat = () => {
                   <li>
                     <button 
                       className="dropdown-item small" 
-                      onClick={() => setShowNewGroupModal(true)}
+                      onClick={() => {
+                        fetchAvailableUsers();
+                        setShowNewGroupModal(true);
+                      }}
                     >
                       <FontAwesomeIcon icon={faUsers} className="me-2" />
                       Grup nou
@@ -847,7 +1464,7 @@ const Chat = () => {
             </div>
           </div>
           
-          {/* Casetă de căutare */}
+          {/* Bara de căutare */}
           <div style={styles.searchBar}>
             <div className="input-group input-group-sm">
               <span className="input-group-text bg-dark text-white border-secondary">
@@ -856,7 +1473,7 @@ const Chat = () => {
               <input 
                 type="text"
                 className="form-control form-control-sm bg-dark text-white border-secondary"
-                placeholder="Caută conversații"
+                placeholder="Caută în conversații"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -870,196 +1487,177 @@ const Chat = () => {
               {error}
               <button 
                 className="btn-close btn-close-white ms-auto" 
-                style={{ fontSize: '10px' }}
                 onClick={() => setError(null)}
+                style={{ fontSize: '10px' }}
               ></button>
             </div>
           )}
           
           {/* Lista de chat-uri */}
-          <div className="chat-list-container" style={styles.chatListContainer}>
-            <div className="chat-list" style={styles.chatList}>
-              {loading ? (
-                <div style={styles.loadingState}>
-                  <div className="spinner-border spinner-border-sm text-primary" role="status">
-                    <span className="visually-hidden">Se încarcă...</span>
-                  </div>
-                  <div className="mt-2 small">Se încarcă conversațiile...</div>
+          <div className="chat-list-view" style={styles.chatListContainer}>
+            {loading ? (
+              <div className="text-center p-4">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Se încarcă...</span>
                 </div>
-              ) : chats.length === 0 ? (
-                <div style={styles.emptyState}>
-                  <FontAwesomeIcon icon={faUsers} style={{ fontSize: '24px', opacity: '0.5' }} className="mb-2" />
-                  <div className="mb-2">Nu există conversații</div>
-                  <button 
-                    className="btn btn-sm btn-primary mt-2"
-                    onClick={() => setShowNewChatModal(true)}
-                  >
-                    <FontAwesomeIcon icon={faUserPlus} className="me-1" />
-                    Conversație nouă
-                  </button>
-                </div>
-              ) : (
-                // Lista de chat-uri filtrată
-                chats
-                  .filter(chat => 
-                    chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (chat.latestMessage && chat.latestMessage.content && 
-                    chat.latestMessage.content.toLowerCase().includes(searchTerm.toLowerCase()))
-                  )
-                  .map(chat => (
+                <div className="mt-2 text-light">Se încarcă conversațiile...</div>
+              </div>
+            ) : filteredChats.length === 0 ? (
+              <div className="text-center p-4 text-light">
+                <FontAwesomeIcon icon={faUsers} className="mb-2" style={{ fontSize: '2rem' }} />
+                <p className="mb-3">Nu există conversații</p>
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    fetchAvailableUsers();
+                    setShowNewChatModal(true);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUserPlus} className="me-2" />
+                  Conversație nouă
+                </button>
+              </div>
+            ) : (
+              // Lista de chat-uri - fiecare item are class="chat-item" pentru a asigura vizibilitatea
+              filteredChats.map(chat => (
+                <div 
+                  key={chat._id} 
+                  className="chat-item" 
+                  onClick={() => setSelectedChat(chat)}
+                >
+                  <div className="chat-item-content">
                     <div 
-                      key={chat._id} 
-                      className="chat-item" 
-                      style={styles.chatItem}
-                      onClick={() => setSelectedChat(chat)}
+                      className="rounded-circle d-flex align-items-center justify-content-center text-white me-3 flex-shrink-0"
+                      style={{ 
+                        width: '48px', 
+                        height: '48px',
+                        backgroundColor: chat.isGroupChat ? '#0d6efd' : '#198754',
+                        fontSize: '20px'
+                      }}
                     >
-                      <div className="d-flex w-100 align-items-center">
-                        <div 
-                          className="rounded-circle d-flex align-items-center justify-content-center text-white me-2 flex-shrink-0"
-                          style={{ 
-                            width: '40px', 
-                            height: '40px',
-                            backgroundColor: chat.isGroupChat ? '#0d6efd' : '#198754',
-                            fontSize: '16px'
-                          }}
-                        >
-                          {chat.isGroupChat 
-                            ? chat.name.charAt(0)
-                            : chat.users.find(u => u._id !== user._id)?.name.charAt(0) || '?'
-                          }
+                      {chat.isGroupChat 
+                        ? chat.name.charAt(0)
+                        : chat.users.find(u => u._id !== user._id)?.name.charAt(0) || '?'
+                      }
+                    </div>
+                    
+                    <div className="flex-grow-1 min-width-0">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div className="fw-bold text-truncate" style={{ maxWidth: '180px', fontSize: '14px' }}>
+                          {chat.name}
                         </div>
-                        
-                        <div className="flex-grow-1 min-width-0">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div className="fw-bold text-truncate" style={{ 
-                              maxWidth: orientation === 'portrait' ? '150px' : '220px', 
-                              fontSize: '14px' 
-                            }}>
-                              {chat.name}
-                            </div>
-                            {chat.latestMessage && (
-                              <small className="text-muted" style={{ fontSize: '10px' }}>
-                                {new Date(chat.latestMessage.createdAt).toLocaleDateString()}
-                              </small>
+                        {chat.latestMessage && (
+                          <small className="text-muted" style={{ fontSize: '10px' }}>
+                            {new Date(chat.latestMessage.createdAt).toLocaleDateString()}
+                          </small>
+                        )}
+                      </div>
+                      
+                      <div className="text-muted small text-truncate" style={{ fontSize: '12px' }}>
+                        {chat.latestMessage ? (
+                          <>
+                            {chat.isGroupChat && chat.latestMessage.sender._id !== user._id && (
+                              <span className="fw-bold">{chat.latestMessage.sender.name}: </span>
                             )}
-                          </div>
-                          
-                          <div className="text-muted small text-truncate" style={{ 
-                            fontSize: '12px',
-                            maxWidth: orientation === 'portrait' ? '190px' : '260px'
-                          }}>
-                            {chat.latestMessage ? (
-                              <>
-                                {chat.isGroupChat && chat.latestMessage.sender._id !== user._id && (
-                                  <span className="fw-bold">{chat.latestMessage.sender.name}: </span>
-                                )}
-                                {chat.latestMessage.deletedForAll ? (
-                                  <span className="fst-italic">Acest mesaj a fost șters</span>
-                                ) : chat.latestMessage.attachment ? (
-                                  <span>
-                                    {chat.latestMessage.attachmentType === 'image' ? 'Imagine' :
-                                    chat.latestMessage.attachmentType === 'audio' ? 'Audio' :
-                                    chat.latestMessage.attachmentType === 'video' ? 'Video' : 'Document'}
-                                    {chat.latestMessage.content && `: ${chat.latestMessage.content.substring(0, 20)}${chat.latestMessage.content.length > 20 ? '...' : ''}`}
-                                  </span>
-                                ) : (
-                                  <span>
-                                    {chat.latestMessage.content.substring(0, 30)}
-                                    {chat.latestMessage.content.length > 30 ? '...' : ''}
-                                  </span>
-                                )}
-                              </>
+                            {chat.latestMessage.deletedForAll ? (
+                              <span className="fst-italic">Acest mesaj a fost șters</span>
+                            ) : chat.latestMessage.attachment ? (
+                              <span>
+                                {chat.latestMessage.attachmentType === 'image' ? 'Imagine' :
+                                 chat.latestMessage.attachmentType === 'audio' ? 'Audio' :
+                                 chat.latestMessage.attachmentType === 'video' ? 'Video' : 'Document'}
+                                {chat.latestMessage.content && `: ${chat.latestMessage.content.substring(0, 20)}${chat.latestMessage.content.length > 20 ? '...' : ''}`}
+                              </span>
                             ) : (
-                              <span>Nu există mesaje</span>
+                              <span>
+                                {chat.latestMessage.content.substring(0, 30)}
+                                {chat.latestMessage.content.length > 30 ? '...' : ''}
+                              </span>
                             )}
-                          </div>
-                        </div>
-                        
-                        {/* Badge pentru mesaje necitite */}
-                        {chat.unreadCount > 0 && (
-                          <div 
-                            className="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center ms-1"
-                            style={{ 
-                              width: '18px', 
-                              height: '18px',
-                              fontSize: '10px',
-                              flexShrink: 0,
-                              marginLeft: '3px'
-                            }}
-                          >
-                            {chat.unreadCount}
-                          </div>
+                          </>
+                        ) : (
+                          <span>Nu există mesaje</span>
                         )}
                       </div>
                     </div>
-                  ))
-              )}
-            </div>
+                    
+                    {/* Badge pentru mesaje necitite */}
+                    {chat.unreadCount > 0 && (
+                      <div 
+                        className="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center ms-2 flex-shrink-0"
+                        style={{ 
+                          width: '20px', 
+                          height: '20px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        {chat.unreadCount}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </>
       )}
       
-      {/* Modal pentru conversatie nouă - implementare simplă */}
-      {showNewChatModal && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content bg-dark text-white border border-secondary">
-              <div className="modal-header border-secondary">
-                <h5 className="modal-title">Conversație nouă</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowNewChatModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <div className="input-group input-group-sm">
-                    <span className="input-group-text bg-dark text-white border-secondary">
-                      <FontAwesomeIcon icon={faSearch} />
-                    </span>
-                    <input 
-                      type="text"
-                      className="form-control form-control-sm bg-dark text-white border-secondary"
-                      placeholder="Caută un utilizator"
-                      value={userSearchTerm}
-                      onChange={(e) => setUserSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <div className="alert alert-secondary text-center">
-                  <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                  Funcționalitatea de chat nou este dezactivată în această versiune
-                </div>
-              </div>
-              <div className="modal-footer border-secondary">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowNewChatModal(false)}>
-                  Anulează
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal-uri */}
+      <NewChatModal />
+      <NewGroupModal />
       
-      {/* Modal pentru grup nou - implementare simplă */}
-      {showNewGroupModal && (
-        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content bg-dark text-white border border-secondary">
-              <div className="modal-header border-secondary">
-                <h5 className="modal-title">Grup nou</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowNewGroupModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="alert alert-secondary text-center">
-                  <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                  Funcționalitatea de creare grup este dezactivată în această versiune
-                </div>
-              </div>
-              <div className="modal-footer border-secondary">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowNewGroupModal(false)}>
-                  Anulează
-                </button>
-              </div>
+      {/* Meniu contextual pentru mesaje */}
+      {contextMenu.visible && (
+        <div 
+          className="position-fixed"
+          style={{ 
+            top: contextMenu.y, 
+            left: contextMenu.x,
+            zIndex: 1050,
+            minWidth: '160px',
+            backgroundColor: '#2a2a2a',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            border: '1px solid #444'
+          }}
+        >
+          <div 
+            className="p-2 d-flex align-items-center"
+            style={{ 
+              cursor: 'pointer',
+              backgroundColor: '#2a2a2a'
+            }}
+            onClick={() => handleReplyMessage(messages.find(m => m._id === contextMenu.messageId))}
+          >
+            <FontAwesomeIcon icon={faReply} className="me-2" />
+            <span>Răspunde</span>
+          </div>
+          
+          {messages.find(m => m._id === contextMenu.messageId)?.sender._id === user._id && (
+            <div 
+              className="p-2 d-flex align-items-center text-danger"
+              style={{ 
+                cursor: 'pointer',
+                backgroundColor: '#2a2a2a'
+              }}
+              onClick={() => deleteMessage(contextMenu.messageId, true)}
+            >
+              <FontAwesomeIcon icon={faTrash} className="me-2" />
+              <span>Șterge pentru toți</span>
             </div>
+          )}
+          
+          <div 
+            className="p-2 d-flex align-items-center text-danger"
+            style={{ 
+              cursor: 'pointer',
+              backgroundColor: '#2a2a2a'
+            }}
+            onClick={() => deleteMessage(contextMenu.messageId, false)}
+          >
+            <FontAwesomeIcon icon={faTrash} className="me-2" />
+            <span>Șterge pentru mine</span>
           </div>
         </div>
       )}
