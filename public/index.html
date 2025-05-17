@@ -1,16 +1,340 @@
 <!DOCTYPE html>
 <html lang="ro">
   <head>
-    <meta charset="utf-6" />
+    <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=0.6, maximum-scale=0.6, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Ambu-Life - Sistem de Management"
+      content="Ambu-Life - Sistem de Management pentru Companii de Ambulanțe"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Stiluri globale pentru responsiveness și layout compact -->
+    <style>
+      /* Stiluri globale pentru aplicație */
+      html {
+        font-size: 14px; /* Reduce mărimea fontului de bază pentru toată aplicația */
+      }
+
+      /* Reduce dimensiunile elementelor general */
+      body {
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      /* Ajustează headingurile */
+      h1 {
+        font-size: 1.5rem !important;
+      }
+
+      h2 {
+        font-size: 1.3rem !important;
+      }
+
+      h3 {
+        font-size: 1.15rem !important;
+      }
+
+      h4, h5, h6 {
+        font-size: 1rem !important;
+      }
+
+      /* Butoane mai mici peste tot */
+      .btn {
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.85rem !important;
+      }
+
+      .btn-sm {
+        padding: 0.2rem 0.4rem !important;
+        font-size: 0.75rem !important;
+      }
+
+      .btn-lg {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.95rem !important;
+      }
+
+      /* Inputuri și formulare */
+      .form-control, .input-group-text {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.85rem !important;
+        height: auto !important;
+      }
+
+      /* Tabele mai compacte */
+      .table td,
+      .table th {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.85rem !important;
+      }
+
+      /* Card-uri și containere mai compacte */
+      .card, .content-card {
+        padding: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+
+      .card-header, .card-footer {
+        padding: 0.5rem 0.75rem !important;
+      }
+
+      .card-body {
+        padding: 0.75rem !important;
+      }
+
+      /* Reducerea marginilor și paddingului general */
+      .mt-3, .my-3, .m-3 {
+        margin-top: 0.75rem !important;
+      }
+
+      .mb-3, .my-3, .m-3 {
+        margin-bottom: 0.75rem !important;
+      }
+
+      .ms-3, .mx-3, .m-3 {
+        margin-left: 0.75rem !important;
+      }
+
+      .me-3, .mx-3, .m-3 {
+        margin-right: 0.75rem !important;
+      }
+
+      .pt-3, .py-3, .p-3 {
+        padding-top: 0.75rem !important;
+      }
+
+      .pb-3, .py-3, .p-3 {
+        padding-bottom: 0.75rem !important;
+      }
+
+      .ps-3, .px-3, .p-3 {
+        padding-left: 0.75rem !important;
+      }
+
+      .pe-3, .px-3, .p-3 {
+        padding-right: 0.75rem !important;
+      }
+
+      /* Ajustează grid layout-ul */
+      .row {
+        margin-left: -5px !important;
+        margin-right: -5px !important;
+      }
+
+      .col, .col-1, .col-2, .col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-9, .col-10, .col-11, .col-12, 
+      .col-sm, .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12,
+      .col-md, .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12,
+      .col-lg, .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12 {
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+      }
+
+      /* Reduce spațiile între liste */
+      .list-group-item {
+        padding: 0.5rem 0.75rem !important;
+      }
+
+      /* Ajustează marginile containerelor principale */
+      .container, .container-fluid {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+      }
+
+      /* Ajustează dropdown-urile */
+      .dropdown-menu {
+        padding: 0.25rem !important;
+        font-size: 0.85rem !important;
+      }
+
+      .dropdown-item {
+        padding: 0.25rem 0.5rem !important;
+      }
+
+      /* Icoanele să rămână proporționale */
+      .fa, .fas, .far, .fal, .fab, .svg-inline--fa {
+        font-size: 0.9em !important;
+      }
+
+      /* Optimizări pentru iconițe și imagini */
+      [class^="icon-"], [class*=" icon-"],
+      .icon, .avatar {
+        transform: scale(0.85) !important;
+      }
+
+      /* Asigură-te că toate tabelele au scroll orizontal pe mobil */
+      .table-responsive {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* Dashboard stats mai compacte */
+      .stats-card .stats-value {
+        font-size: 1.5rem !important;
+        font-weight: 600 !important;
+      }
+
+      .stats-card .stats-title {
+        font-size: 0.8rem !important;
+        opacity: 0.7;
+      }
+
+      /* Modal-uri mai mici */
+      .modal-dialog {
+        max-width: 90% !important;
+        margin: 10px auto !important;
+      }
+
+      .modal-header, .modal-footer {
+        padding: 0.5rem 0.75rem !important;
+      }
+
+      .modal-body {
+        padding: 0.75rem !important;
+      }
+
+      /* Navbar mai compact */
+      .navbar {
+        padding: 0.5rem 0.75rem !important;
+      }
+
+      .navbar-brand {
+        font-size: 1.1rem !important;
+      }
+
+      /* Ajustează suplimentar pentru telefoane foarte mici */
+      @media (max-width: 375px) {
+        html {
+          font-size: 13px !important;
+        }
+        
+        .container, .container-fluid {
+          padding-left: 8px !important;
+          padding-right: 8px !important;
+        }
+      }
+
+      /* Ajustări pentru layoutul sidebar/content */
+      @media (min-width: 768px) {
+        .main-content {
+          margin-left: 200px !important;
+          padding: 1rem !important;
+        }
+      }
+
+      /* Fix pentru tabel care iese din ecran */
+      .table {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .table td {
+        max-width: 200px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+
+      /* Stiluri pentru pagina chat */
+      .chat-container {
+        min-height: 100vh !important;
+        width: 100% !important;
+        background-color: #121212 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      .chat-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 8px 10px !important;
+        background-color: #1a1a1a !important;
+        border-bottom: 1px solid #333 !important;
+      }
+
+      .chat-list-view {
+        display: block !important;
+        visibility: visible !important;
+        height: calc(100vh - 110px) !important;
+        width: 100% !important;
+        overflow-y: auto !important;
+        background-color: #121212 !important;
+      }
+
+      .chat-item {
+        display: flex !important;
+        visibility: visible !important;
+        width: 100% !important;
+        padding: 10px !important;
+        border-bottom: 1px solid #333 !important;
+        background-color: #121212 !important;
+      }
+
+      .chat-item-content {
+        display: flex !important;
+        visibility: visible !important;
+        width: 100% !important;
+      }
+
+      /* Optimizează Sidebar */
+      .sidebar {
+        width: 200px !important;
+        position: fixed !important;
+        height: 100% !important;
+        z-index: 1000 !important;
+      }
+
+      /* Optimizează space în dashboard */
+      .dashboard-card {
+        margin-bottom: 0.75rem !important;
+        padding: 0.75rem !important;
+      }
+
+      .dashboard-stats {
+        padding: 0.5rem !important;
+      }
+
+      .dashboard-icon {
+        width: 40px !important;
+        height: 40px !important;
+      }
+
+      /* Optimizări pentru pagina de detalii */
+      .details-card {
+        padding: 0.75rem !important;
+      }
+
+      .details-header {
+        padding: 0.5rem 0.75rem !important;
+      }
+
+      .details-body {
+        padding: 0.75rem !important;
+      }
+
+      /* Ajustări pentru butoanele de acțiuni */
+      .action-buttons .btn {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+      }
+
+      /* Optimizări pentru formulare */
+      .form-label {
+        margin-bottom: 0.25rem !important;
+        font-size: 0.85rem !important;
+      }
+
+      .form-group, .mb-3 {
+        margin-bottom: 0.75rem !important;
+      }
+    </style>
+    
     <title>Ambu-Life</title>
   </head>
   <body>
