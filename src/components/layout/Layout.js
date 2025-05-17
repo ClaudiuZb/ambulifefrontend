@@ -11,6 +11,43 @@ const Layout = ({ children }) => {
   const { user, loading } = useSelector(state => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Adăugăm CSS media queries ca style tags
+  useEffect(() => {
+    // Verificăm dacă există deja stilul
+    if (!document.getElementById('layout-responsive-styles')) {
+      const styleTag = document.createElement('style');
+      styleTag.id = 'layout-responsive-styles';
+      styleTag.innerHTML = `
+        @media (min-width: 768px) {
+          .main-content {
+            margin-left: 200px !important;
+          }
+          .desktop-sidebar {
+            display: block !important;
+          }
+          .hamburger-btn {
+            display: none !important;
+          }
+        }
+        
+        @media (max-width: 767px) {
+          .main-content {
+            padding-top: 60px; /* Spațiu pentru butonul hamburger */
+          }
+        }
+      `;
+      document.head.appendChild(styleTag);
+    }
+    
+    return () => {
+      // Curățăm stilul când componenta este demontată
+      const styleTag = document.getElementById('layout-responsive-styles');
+      if (styleTag) {
+        document.head.removeChild(styleTag);
+      }
+    };
+  }, []);
+
   // Închide sidebar-ul când se face click în afara lui pe dispozitive mobile
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -119,43 +156,6 @@ const Layout = ({ children }) => {
       zIndex: 1029,
     },
   };
-
-  // Adăugăm CSS media queries ca style tags
-  useEffect(() => {
-    // Verificăm dacă există deja stilul
-    if (!document.getElementById('layout-responsive-styles')) {
-      const styleTag = document.createElement('style');
-      styleTag.id = 'layout-responsive-styles';
-      styleTag.innerHTML = `
-        @media (min-width: 768px) {
-          .main-content {
-            margin-left: 200px !important;
-          }
-          .desktop-sidebar {
-            display: block !important;
-          }
-          .hamburger-btn {
-            display: none !important;
-          }
-        }
-        
-        @media (max-width: 767px) {
-          .main-content {
-            padding-top: 60px; /* Spațiu pentru butonul hamburger */
-          }
-        }
-      `;
-      document.head.appendChild(styleTag);
-    }
-    
-    return () => {
-      // Curățăm stilul când componenta este demontată
-      const styleTag = document.getElementById('layout-responsive-styles');
-      if (styleTag) {
-        document.head.removeChild(styleTag);
-      }
-    };
-  }, []);
 
   return (
     <div style={styles.container}>
